@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"log"
+	"logstash-as-a-service-backend/core"
+	"logstash-as-a-service-backend/data"
+	"logstash-as-a-service-backend/handlers"
 	"net/http"
 	"os"
 	"os/signal"
@@ -21,8 +24,25 @@ func main() {
 		Name:  "logstash-service",
 		Level: hclog.LevelFromString("DEBUG"),
 	})
+	fileHandlerLogger := l.Named("File")
+	coreDataLogger := l.Named("Core")
+	pipelineHandlerLogger := l.Named("Handler")
+
+	fs := data.NewFileService(
+		fileHandlerLogger,
+		os.Getenv("pipelinesPath"),
+		os.Getenv("configPath"),
+	)
+
+	ps := core.NewPipelineService(coreDataLogger, fs)
+	ph := handlers.New(ps, pipelineHandlerLogger)
 
 	sm := mux.NewRouter()
+	sm.Use(handlers.CommonMiddleware)
+
+	getPipelinesConf := sm.Methods(http.MethodGet).Subrouter()
+	getPipelinesConf.Headers("Content-Type", "application/json")
+	getPipelinesConf.HandleFunc("/pipelines", ph.GetConfiguredPipelines)
 
 	ch := gohandlers.CORS(gohandlers.AllowedOrigins([]string{"*"}))
 	s := http.Server{
