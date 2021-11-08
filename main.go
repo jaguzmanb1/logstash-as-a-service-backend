@@ -43,6 +43,7 @@ func main() {
 	getPipelinesConf := sm.Methods(http.MethodGet).Subrouter()
 	getPipelinesConf.Headers("Content-Type", "application/json")
 	getPipelinesConf.HandleFunc("/pipelines", ph.GetConfiguredPipelines)
+	getPipelinesConf.HandleFunc("/pipelines/detailed", ph.GetConfiguredPipelinesDetailed)
 
 	ch := gohandlers.CORS(gohandlers.AllowedOrigins([]string{"*"}))
 	s := http.Server{

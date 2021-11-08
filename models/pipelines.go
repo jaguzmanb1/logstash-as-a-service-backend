@@ -1,12 +1,14 @@
 package models
 
+import "github.com/breml/logstash-config/ast"
+
 type PipelineConf struct {
 	ID      string
 	Path    string
-	Plugins Plugins
+	Plugins []ast.Plugin
 }
 
-type PipelinesConf []*PipelineConf
+type PipelinesConf []PipelineConf
 
 type Dependences struct {
 	Key   string
@@ -33,5 +35,3 @@ type Plugin struct {
 	ReleasedDate     string
 	Configs          []PluginSettings
 }
-
-type Plugins []Plugin

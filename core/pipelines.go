@@ -24,5 +24,16 @@ func (ps *PipelineService) GetConfiguredPipelines() (models.PipelinesConf, error
 	}
 
 	return pipelines, nil
+}
+
+func (ps *PipelineService) GetConfiguredPipelinesDetailed() (models.PipelinesConf, error) {
+	ps.l.Info("[GetConfiguredPipelines] Getting pipelines from pipeline service")
+	pipelines, err := ps.fs.GetConfiguredPipelinesDetailed()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return pipelines, nil
 
 }

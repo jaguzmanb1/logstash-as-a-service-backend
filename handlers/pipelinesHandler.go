@@ -30,3 +30,14 @@ func (h *PipelinesHandlers) GetConfiguredPipelines(w http.ResponseWriter, r *htt
 	}
 	ToJSON(&pipelines, w)
 }
+
+func (h *PipelinesHandlers) GetConfiguredPipelinesDetailed(w http.ResponseWriter, r *http.Request) {
+	h.l.Info("[GetConfiguredPipelinesDetailed] Handling request to get all configured pipelines")
+	pipelines, err := h.PipelineService.GetConfiguredPipelinesDetailed()
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		ToJSON(&GenericError{Message: err.Error()}, w)
+	}
+	ToJSON(pipelines[0], w)
+}
