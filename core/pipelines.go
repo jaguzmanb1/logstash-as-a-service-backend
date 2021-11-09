@@ -4,6 +4,7 @@ import (
 	"logstash-as-a-service-backend/data"
 	"logstash-as-a-service-backend/models"
 
+	"github.com/breml/logstash-config/ast"
 	"github.com/hashicorp/go-hclog"
 )
 
@@ -36,4 +37,12 @@ func (ps *PipelineService) GetConfiguredPipelinesDetailed() (models.PipelinesCon
 
 	return pipelines, nil
 
+}
+
+func (ps *PipelineService) CreatePipeline(conf ast.Config, user string) {
+	ps.l.Info("[CreatePipeline]")
+	err := ps.fs.CreatePipeline(conf, user)
+	if err != nil {
+		ps.l.Error("[CreatePipeline] Error creating pipeline", "error", err)
+	}
 }

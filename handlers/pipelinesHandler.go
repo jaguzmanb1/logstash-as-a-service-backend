@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"fmt"
 	"logstash-as-a-service-backend/core"
+	"logstash-as-a-service-backend/models"
 	"net/http"
 
 	"github.com/hashicorp/go-hclog"
@@ -40,4 +42,20 @@ func (h *PipelinesHandlers) GetConfiguredPipelinesDetailed(w http.ResponseWriter
 		ToJSON(&GenericError{Message: err.Error()}, w)
 	}
 	ToJSON(pipelines[0], w)
+}
+
+func (h *PipelinesHandlers) CreatePipeline(w http.ResponseWriter, r *http.Request) {
+	h.l.Info("[CreatePipeline] Handling request to create pipeline")
+	conf := models.Config{}
+	err := FromJSON(&conf, r.Body)
+	writeErr(w, err)
+	fmt.Printf("%+v\n", conf)
+	//h.PipelineService.CreatePipeline(conf)
+}
+
+func writeErr(w http.ResponseWriter, err error) {
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		ToJSON(&GenericError{Message: err.Error()}, w)
+	}
 }

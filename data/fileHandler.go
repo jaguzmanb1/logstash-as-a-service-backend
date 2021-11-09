@@ -2,6 +2,7 @@ package data
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"logstash-as-a-service-backend/models"
 	"os"
@@ -60,7 +61,7 @@ func (f *FileService) GetConfiguredPipelines() (models.PipelinesConf, error) {
 }
 
 func (f *FileService) GetConfiguredPipelinesDetailed() (models.PipelinesConf, error) {
-	f.l.Info("[GetConfiguredPipelines] Start to configuration file ", "file path", f.ConfigPath)
+	f.l.Info("[GetConfiguredPipelinesDetailed] Start to configuration file ", "file path", f.ConfigPath)
 
 	pipelines := models.PipelinesConf{}
 	file, err := os.Open(f.ConfigPath)
@@ -79,7 +80,7 @@ func (f *FileService) GetConfiguredPipelinesDetailed() (models.PipelinesConf, er
 				scanner.Scan()
 				txt = scanner.Text()
 				pl.Path = strings.Replace(strings.Replace(strings.Split(txt, ":")[1], " ", "", -1), "\"", "", -1)
-				pl.Plugins = f.GetConfiguredPlugins(pl.Path)
+				pl.Config = f.GetConfiguredPlugins(pl.Path)
 				pipelines = append(pipelines, pl)
 			}
 		}
@@ -91,11 +92,11 @@ func (f *FileService) GetConfiguredPipelinesDetailed() (models.PipelinesConf, er
 	return pipelines, nil
 }
 
-func (f *FileService) GetPlugin(path string, ty string) (ast.Plugin, error) {
+func (f *FileService) GetPlugin(path string, ty string) ([]ast.PluginSection, error) {
 	f.l.Info("[GetPlugin]")
 	file, err := os.Open(path)
 	if err != nil {
-		return ast.Plugin{}, err
+		return []ast.PluginSection{}, err
 	}
 
 	defer file.Close()
@@ -103,7 +104,7 @@ func (f *FileService) GetPlugin(path string, ty string) (ast.Plugin, error) {
 
 	c, err := config.ParseFile(path)
 	if err != nil {
-		return ast.Plugin{}, err
+		return []ast.PluginSection{}, err
 	}
 	conf := c.(ast.Config)
 	pls := []ast.PluginSection{}
@@ -115,30 +116,44 @@ func (f *FileService) GetPlugin(path string, ty string) (ast.Plugin, error) {
 		pls = conf.Output
 	}
 
-	pl := pls[0].BranchOrPlugins[0].(ast.Plugin)
-
-	return pl, nil
+	return pls, nil
 }
 
-func (f *FileService) GetConfiguredPlugins(str string) (result []ast.Plugin) {
+func (f *FileService) GetConfiguredPlugins(str string) (result ast.Config) {
 	f.l.Info("[GetConfiguredPlugins]")
 	replacer := strings.NewReplacer("{", "", "}", "")
 	rex := regexp.MustCompile(`{.*}`)
 	out := replacer.Replace(rex.FindAllStringSubmatch(str, -1)[0][0])
 
 	plgsText := strings.Split(out, ",")
-	pls := []ast.Plugin{}
+	conf := ast.Config{}
 	for _, plg := range plgsText {
 		ty := strings.Split(plg, "/")[0]
-		pl, err := f.GetPlugin(f.PipelinesPath+plg+".conf", trimLastChar(ty))
-		pls = append(pls, pl)
+		sec := trimLastChar(ty)
+		pl, err := f.GetPlugin(f.PipelinesPath+plg+".conf", sec)
+		if sec == "input" {
+			conf.Input = append(conf.Input, pl...)
+		}
+		if sec == "filter" {
+			conf.Filter = append(conf.Filter, pl...)
+		}
+		if sec == "output" {
+			conf.Output = append(conf.Filter, pl...)
+		}
+
 		if err != nil {
 			f.l.Error("[GetConfiguredPlugins]", "error", err)
 		}
 
 	}
 
-	return pls
+	return conf
+}
+
+func (f *FileService) CreatePipeline(config ast.Config, id string) error {
+	f.l.Info("[CreatePipeline]")
+	fmt.Printf(config.String())
+	return nil
 }
 
 func trimLastChar(s string) string {

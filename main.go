@@ -45,6 +45,9 @@ func main() {
 	getPipelinesConf.HandleFunc("/pipelines", ph.GetConfiguredPipelines)
 	getPipelinesConf.HandleFunc("/pipelines/detailed", ph.GetConfiguredPipelinesDetailed)
 
+	postPipelinesConf := sm.Methods(http.MethodPost).Subrouter()
+	postPipelinesConf.HandleFunc("/pipelines", ph.CreatePipeline)
+
 	ch := gohandlers.CORS(gohandlers.AllowedOrigins([]string{"*"}))
 	s := http.Server{
 		Addr:         os.Getenv("bindAddress"),                         // configure the bind address
